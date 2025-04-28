@@ -13,9 +13,9 @@ This project is a multiplayer demo using [SpacetimeDB](https://spacetimedb.com/)
   - The server is running locally and can be published/queried using the SpacetimeDB CLI.
 
 - **Client**:  
-  - Built with JavaScript and Three.js.
+  - Rebuilt with React, TypeScript, and `react-three-fiber` using Vite.
   - Connects to the SpacetimeDB backend.
-  - Currently displays a 3D scene; integration with entity data is in progress.
+  - Basic scene setup is in place; SpacetimeDB integration is next.
   - OrbitControls are being added for interactive camera movement.
 
 - **Repository**:  
@@ -63,7 +63,7 @@ This project is a multiplayer demo using [SpacetimeDB](https://spacetimedb.com/)
 4. **Run the client:**
    ```sh
    cd client
-   npm start
+   npm run dev
    ```
 
 ## Contributing

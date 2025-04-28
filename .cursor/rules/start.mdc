@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+We are building a app together here. Follow this procedure
+
+1. Read README.md in root dir to figure out the scope of the project and the current state
+
+2. Interact with the user to build a new feature or so
+
+3. once finished, update README.md with everything that would be helpfull to pick up in the next clean session
