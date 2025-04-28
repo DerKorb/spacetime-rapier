@@ -3,8 +3,14 @@ name = "server"
 version = "0.1.0"
 edition = "2021"
 
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-spacetimedb = "1.1" 
+spacetimedb = { git = "https://github.com/clockworklabs/SpacetimeDB", tag = "v1.1.1" }
+log = "0.4" # Add log dependency 
+rapier3d = { version = "0.19", features = ["serde-serialize", "enhanced-determinism"] }
+nalgebra = "0.33"
+once_cell = "1.19" # Add once_cell 

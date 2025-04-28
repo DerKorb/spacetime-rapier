@@ -31,7 +31,11 @@ import {
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
 
-export type Spawn = {};
+export type Spawn = {
+  x: number,
+  y: number,
+  z: number,
+};
 
 /**
  * A namespace for generated helper functions.
@@ -43,6 +47,9 @@ export namespace Spawn {
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
+      new ProductTypeElement("x", AlgebraicType.createF64Type()),
+      new ProductTypeElement("y", AlgebraicType.createF64Type()),
+      new ProductTypeElement("z", AlgebraicType.createF64Type()),
     ]);
   }
 

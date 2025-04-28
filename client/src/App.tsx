@@ -99,9 +99,15 @@ function App() {
 
   const spawnEntity = () => {
     if (connectionRef.current && connectionRef.current.reducers) {
-      console.log('Calling spawn reducer...');
+      // Generate random coordinates
+      const x = Math.random() * 20 - 10; // Example range -10 to 10
+      const y = 1; // Keep y fixed for simplicity
+      const z = Math.random() * 20 - 10; // Example range -10 to 10
+
+      console.log(`Calling spawn reducer with x=${x.toFixed(2)}, y=${y}, z=${z.toFixed(2)}...`);
       try {
-        connectionRef.current.reducers.spawn();
+        // Call the generated reducer function, passing the coordinates
+        connectionRef.current.reducers.spawn(x, y, z);
       } catch (err) {
         console.error("Failed to call spawn reducer:", err);
       }

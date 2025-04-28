@@ -89,15 +89,19 @@ export type Reducer = never
 export class RemoteReducers {
   constructor(private connection: DbConnectionImpl, private setCallReducerFlags: SetReducerFlags) {}
 
-  spawn() {
-    this.connection.callReducer("spawn", new Uint8Array(0), this.setCallReducerFlags.spawnFlags);
+  spawn(x: number, y: number, z: number) {
+    const __args = { x, y, z };
+    let __writer = new BinaryWriter(1024);
+    Spawn.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("spawn", __argsBuffer, this.setCallReducerFlags.spawnFlags);
   }
 
-  onSpawn(callback: (ctx: ReducerEventContext) => void) {
+  onSpawn(callback: (ctx: ReducerEventContext, x: number, y: number, z: number) => void) {
     this.connection.onReducer("spawn", callback);
   }
 
-  removeOnSpawn(callback: (ctx: ReducerEventContext) => void) {
+  removeOnSpawn(callback: (ctx: ReducerEventContext, x: number, y: number, z: number) => void) {
     this.connection.offReducer("spawn", callback);
   }
 

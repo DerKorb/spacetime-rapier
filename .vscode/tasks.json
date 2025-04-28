@@ -23,16 +23,29 @@
             "detail": "Build the client application for production"
         },
         {
+            "label": "Server: build",
+            "type": "shell",
+            "command": "unset ARGV0 && cargo build",
+            "options": {
+                "cwd": "${workspaceFolder}/server"
+            },
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "build",
+            "detail": "Build the Rust server module"
+        },
+        {
             "label": "Server: start",
             "type": "shell",
-            "command": "ls -l /home/ksollner/.local/bin/spacetime",
+            "command": "unset ARGV0 && unset APPIMAGE && /home/ksollner/.local/bin/spacetime start",
             "problemMatcher": [],
-            "detail": "Check spacetime executable permissions"
+            "detail": "Start the SpacetimeDB server (May fail, see README)"
         },
         {
             "label": "Server: publish",
             "type": "shell",
-            "command": "unset APPIMAGE && /home/ksollner/.local/bin/spacetime publish --project-path . spacetime",
+            "command": "unset ARGV0 && unset APPIMAGE && /home/ksollner/.local/bin/spacetime publish --project-path . spacetime",
             "options": {
                 "cwd": "${workspaceFolder}/server"
             },
