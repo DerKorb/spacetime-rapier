@@ -1,0 +1,16 @@
+{
+  "name": "physics-client",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@clockworklabs/spacetimedb-sdk": "^0.7",
+    "three": "^0.159.0"
+  },
+  "scripts": {
+    "start": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+} 
