@@ -1,6 +1,8 @@
 import { OrbitControls, Plane, Sphere } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
+// Import physics components
+import { Physics, RigidBody, BallCollider, CuboidCollider } from '@react-three/rapier';
 
 // Import base types from SDK
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
@@ -20,12 +22,38 @@ import {
 const SPACETIMEDB_HOST = 'localhost:3000';
 const SPACETIMEDB_DB_NAME = 'spacetime';
 
-// Entity Mesh Component (remains the same)
-function EntityMesh({ position }: { position: [number, number, number] }) {
+// Entity Mesh Component with Physics
+function EntityMesh({ position, entityId }: { position: [number, number, number], entityId: number }) {
+  // Use a ref to potentially access the RigidBody API later if needed
+  const rigidBodyRef = useRef<any>(null); // Use any for now, replace with proper type if known
+
+  // When a new entity is created (position changes initially), set its position.
+  // We might need a more robust way to handle updates vs. initial spawn.
+  useEffect(() => {
+    if (rigidBodyRef.current) {
+        // Set position directly on initial render or when position fundamentally changes
+        // Note: Continuously setting position might fight the physics engine.
+        // We rely on Rapier to handle physics updates after initial placement.
+        rigidBodyRef.current.setTranslation({ x: position[0], y: position[1], z: position[2] }, true);
+        // Optional: reset velocity if needed on spawn/teleport
+        rigidBodyRef.current.setLinvel({ x: 0, y: 0, z: 0 }, true);
+        rigidBodyRef.current.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    }
+  }, [position]); // React dependency on position ensures this runs when position changes
+
   return (
-    <Sphere args={[1, 16, 16]} position={position}>
-      <meshStandardMaterial color="red" />
-    </Sphere>
+    <RigidBody
+      ref={rigidBodyRef}
+      colliders="ball" // Add a ball collider
+      position={position} // Initial position set here
+      key={entityId} // Use entityId as key for React reconciliation
+      restitution={0.7} // Make it bouncy
+      friction={0.1}
+    >
+      <Sphere args={[1, 16, 16]}>
+        <meshStandardMaterial color="red" />
+      </Sphere>
+    </RigidBody>
   );
 }
 
@@ -34,6 +62,10 @@ function App() {
   const [entityTransforms, setEntityTransforms] = useState<Map<number, EntityTransform>>(new Map());
   const connectionRef = useRef<DbConnection | null>(null);
   const identityRef = useRef<Identity | null>(null);
+
+  // Keep track of entity physics state separately from DB state
+  // This is a simplification; a more robust solution might store Rapier handles
+  const entityPhysicsPositions = useRef<Map<number, { x: number; y: number; z: number }>>(new Map());
 
   useEffect(() => {
     const connection = DbConnection.builder()
@@ -73,6 +105,10 @@ function App() {
         });
         con.db.entityTransform.onUpdate((_ctx: EventContext, _oldTransform: EntityTransform, newTransform: EntityTransform) => {
           console.log('EntityTransform Updated:', newTransform);
+          // TODO: How should DB updates affect physics?
+          // Option 1: Teleport the physics body (might look jarring)
+          // Option 2: Apply forces/impulses (more complex)
+          // Option 3: Ignore DB updates and let physics run (simplest for now)
           setEntityTransforms(prev => new Map(prev).set(newTransform.entityId, newTransform));
         });
 
@@ -115,7 +151,7 @@ function App() {
     if (connectionRef.current && connectionRef.current.reducers) {
       // Generate random coordinates
       const x = Math.random() * 20 - 10; // Example range -10 to 10
-      const y = 1; // Keep y fixed for simplicity
+      const y = 10; // Start higher so it falls
       const z = Math.random() * 20 - 10; // Example range -10 to 10
 
       console.log(`Calling spawn reducer with x=${x.toFixed(2)}, y=${y}, z=${z.toFixed(2)}...`);
@@ -138,26 +174,36 @@ function App() {
       >
         Spawn Entity
       </button>
-      <Canvas camera={{ position: [0, 5, 10], fov: 75 }}>
+      <Canvas camera={{ position: [0, 15, 30], fov: 75 }}>
         <ambientLight intensity={0.4} />
         <directionalLight position={[1, 1, 1]} intensity={1} />
-        <Plane args={[200, 200]} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-          <meshStandardMaterial color="grey" />
-        </Plane>
-        {/* Map over entities and use their ID to find the transform */} 
-        {Array.from(entities.values()).map((entity) => {
-          const transform = entityTransforms.get(entity.id);
-          // Render only if transform data exists
-          if (transform) {
-            return (
-              <EntityMesh
-                key={entity.id}
-                position={[transform.x, transform.y, transform.z]}
-              />
-            );
-          }
-          return null; // Don't render if transform isn't found yet
-        })}
+        {/* Wrap scene content with Physics */}
+        <Physics gravity={[0, -9.81, 0]}>
+          {/* Ground Plane with Physics */}
+          <RigidBody type="fixed" colliders="cuboid" restitution={0.1} friction={1.0}>
+            <Plane args={[200, 200]} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+              <meshStandardMaterial color="grey" />
+            </Plane>
+          </RigidBody>
+
+          {/* Map over entities and use their ID to find the transform */}
+          {Array.from(entities.values()).map((entity) => {
+            const transform = entityTransforms.get(entity.id);
+            // Render only if transform data exists initially
+            if (transform) {
+              // Use the initial position from the database
+              const initialPosition: [number, number, number] = [transform.x, transform.y, transform.z];
+              return (
+                <EntityMesh
+                  key={entity.id} // Key prop moved to RigidBody
+                  entityId={entity.id}
+                  position={initialPosition}
+                />
+              );
+            }
+            return null; // Don't render if transform isn't found yet
+          })}
+        </Physics>
         <OrbitControls />
       </Canvas>
     </div>
