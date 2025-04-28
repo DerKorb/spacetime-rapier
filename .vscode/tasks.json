@@ -51,6 +51,17 @@
             },
             "problemMatcher": [],
             "detail": "Publish the Rust module to the SpacetimeDB server"
+        },
+        {
+            "label": "Server: generate bindings",
+            "type": "shell",
+            "command": "unset ARGV0 && unset APPIMAGE && /home/ksollner/.local/bin/spacetime generate --lang typescript --out-dir client/src/module_bindings --project-path server",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "group": "build",
+            "detail": "Generate TypeScript client bindings from the server schema"
         }
     ]
 }

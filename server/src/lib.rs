@@ -1,4 +1,4 @@
-use log::{error, info};
+use log::info;
 use spacetimedb::{reducer, table, ReducerContext, ScheduleAt, Table};
 use std::collections::HashMap;
 use std::time::Duration;
@@ -96,13 +96,15 @@ fn get_next_entity_id(ctx: &ReducerContext) -> Result<u32, String> {
 // --- Reducers ---
 
 #[reducer(init)]
-pub fn init_physics(ctx: &ReducerContext) -> Result<(), String> {
+pub fn init_physics(_ctx: &ReducerContext) -> Result<(), String> {
     info!("Initializing physics world and timer.");
     let mut state = PHYSICS_STATE.lock().map_err(|e| e.to_string())?;
 
     let ground_collider = ColliderBuilder::cuboid(100.0, 0.1, 100.0).build();
     state.collider_set.insert(ground_collider);
 
+    // Comment out the timer insertion to disable physics ticks for now
+    /*
     ctx.db
         .physics_tick_timer()
         .try_insert(PhysicsTickTimer {
@@ -110,13 +112,16 @@ pub fn init_physics(ctx: &ReducerContext) -> Result<(), String> {
             scheduled_at: ScheduleAt::Interval(Duration::from_millis(16).into()),
         })
         .map_err(|e| e.to_string())?;
+    */
 
     Ok(())
 }
 
 #[reducer]
 pub fn spawn(ctx: &ReducerContext, x: f64, y: f64, z: f64) -> Result<(), String> {
+    info!("Spawn called with coords: x={}, y={}, z={}", x, y, z);
     let entity_id = get_next_entity_id(ctx)?;
+    info!("  -> Assigning entity_id: {}", entity_id);
     ctx.db
         .entity()
         .try_insert(Entity { id: entity_id })
@@ -156,7 +161,7 @@ pub fn spawn(ctx: &ReducerContext, x: f64, y: f64, z: f64) -> Result<(), String>
         .entity_transform()
         .try_insert(EntityTransform { entity_id, x, y, z })
         .map_err(|e| e.to_string())?;
-    info!("Spawned entity id {}", entity_id);
+    info!("  -> Spawn successful for entity_id: {}", entity_id);
     Ok(())
 }
 
@@ -205,25 +210,35 @@ pub fn process_physics_tick(ctx: &ReducerContext, _timer: PhysicsTickTimer) -> R
         if rigid_body.is_dynamic() && state.handle_to_entity_id.contains_key(&handle) {
             let entity_id = state.handle_to_entity_id[&handle];
             let pos = rigid_body.translation();
+            // Log the raw f32 position from Rapier
+            info!(
+                "Physics tick: Entity {}, Raw Position (f32): {:?}",
+                entity_id, pos
+            );
+
+            // Find the existing transform
             if let Some(mut transform) = ctx.db.entity_transform().entity_id().find(&entity_id) {
+                // Update its fields
                 transform.x = pos.x as f64;
                 transform.y = pos.y as f64;
                 transform.z = pos.z as f64;
-                ctx.db
-                    .entity_transform()
-                    .try_insert(transform)
-                    .map_err(|e| e.to_string())?;
+                // Use try_insert() and explicitly handle the result to avoid panic
+                match ctx.db.entity_transform().try_insert(transform) {
+                    Ok(_) => { /* Success, do nothing */ }
+                    Err(e) => {
+                        // Log the specific error if try_insert fails
+                        info!(
+                            "Physics tick: Failed to update EntityTransform for entity_id {}: {}",
+                            entity_id, e
+                        );
+                    }
+                }
             } else {
-                error!("Transform for entity {} not found during tick!", entity_id);
-                ctx.db
-                    .entity_transform()
-                    .try_insert(EntityTransform {
-                        entity_id,
-                        x: pos.x as f64,
-                        y: pos.y as f64,
-                        z: pos.z as f64,
-                    })
-                    .map_err(|e| e.to_string())?;
+                // Row not found, log it
+                info!(
+                    "Physics tick: Transform for entity {} not found, skipping update.",
+                    entity_id
+                );
             }
         }
     }
