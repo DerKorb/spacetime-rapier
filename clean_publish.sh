@@ -5,8 +5,9 @@ set -e
 
 # Define variables
 DB_NAME="spacetime"
-SERVER_DIR="server"
-CLIENT_BINDINGS_DIR="client/src/module_bindings"
+WORKSPACE_ROOT="${PWD}" # Get current working directory
+SERVER_DIR="${WORKSPACE_ROOT}/server"
+CLIENT_BINDINGS_DIR="${WORKSPACE_ROOT}/client/src/generated" # Adjusted path
 SPACETIME_CMD="/home/ksollner/.local/bin/spacetime"
 
 # --- Script Start --- 
@@ -14,6 +15,10 @@ echo "--- IMPORTANT --- Ensure the SpacetimeDB server is running in another term
 echo "$ spacetime start"
 echo "Waiting 5 seconds to allow cancellation if server is not running..."
 sleep 5
+
+# Clean previous build artifacts
+echo "Removing previous server build artifacts ('$SERVER_DIR/target')..."
+rm -rf $SERVER_DIR/target
 
 # Delete the existing local database (Requires running server)
 echo "Deleting local database '$DB_NAME'..."

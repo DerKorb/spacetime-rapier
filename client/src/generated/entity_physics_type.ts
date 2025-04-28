@@ -30,30 +30,38 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-export type Entity = {
-  id: number,
+export type EntityPhysics = {
+  entityId: number,
+  rbHandleIndex: number,
+  rbHandleGeneration: number,
+  coHandleIndex: number,
+  coHandleGeneration: number,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace Entity {
+export namespace EntityPhysics {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("id", AlgebraicType.createU32Type()),
+      new ProductTypeElement("entityId", AlgebraicType.createU32Type()),
+      new ProductTypeElement("rbHandleIndex", AlgebraicType.createU32Type()),
+      new ProductTypeElement("rbHandleGeneration", AlgebraicType.createU32Type()),
+      new ProductTypeElement("coHandleIndex", AlgebraicType.createU32Type()),
+      new ProductTypeElement("coHandleGeneration", AlgebraicType.createU32Type()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: Entity): void {
-    Entity.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: EntityPhysics): void {
+    EntityPhysics.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): Entity {
-    return Entity.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): EntityPhysics {
+    return EntityPhysics.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }

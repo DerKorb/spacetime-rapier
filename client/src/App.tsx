@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { OrbitControls, Plane, Sphere } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Sphere, Plane } from '@react-three/drei';
-import * as THREE from 'three';
+import { useEffect, useRef, useState } from 'react';
 
 // Import base types from SDK
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
@@ -10,12 +9,11 @@ import { Identity } from '@clockworklabs/spacetimedb-sdk';
 import {
   DbConnection,
   Entity,
-  EntityTableHandle,
+  EntityTransform,
+  ErrorContext,
   // Import generated context types (correctly aliased)
   EventContext,
-  ReducerEventContext,
-  SubscriptionEventContext,
-  ErrorContext,
+  ReducerEventContext
 } from './generated';
 
 // SpacetimeDB connection details
@@ -33,39 +31,49 @@ function EntityMesh({ position }: { position: [number, number, number] }) {
 
 function App() {
   const [entities, setEntities] = useState<Map<number, Entity>>(new Map());
+  const [entityTransforms, setEntityTransforms] = useState<Map<number, EntityTransform>>(new Map());
   const connectionRef = useRef<DbConnection | null>(null);
   const identityRef = useRef<Identity | null>(null);
 
   useEffect(() => {
-    let connection: DbConnection | null = null;
-
-    connection = DbConnection.builder()
+    const connection = DbConnection.builder()
       .withUri(`ws://${SPACETIMEDB_HOST}`)
       .withModuleName(SPACETIMEDB_DB_NAME)
       // .withToken(localStorage.getItem('auth_token') || undefined)
       // Corrected onConnect signature (connection first)
-      .onConnect((con: DbConnection, identity: Identity, token?: string) => {
+      .onConnect((con: DbConnection, identity: Identity) => {
         connectionRef.current = con;
         identityRef.current = identity;
-        console.log('Connected to SpacetimeDB with Identity:', identity.toHexString());
+        console.log('Connected to SpacetimeDB with Identity:', identity.toHexString(), con);
         // if (token) { localStorage.setItem('auth_token', token); }
 
         // Corrected callback signatures (context first)
-        con.db.entity.onInsert((ctx: EventContext, entity: Entity) => {
-          console.log('Entity Inserted:', entity, 'Context:', ctx);
+        con.db.entity.onInsert((_ctx: EventContext, entity: Entity) => {
+          console.log('Entity Inserted:', entity);
           setEntities(prev => new Map(prev).set(entity.id, entity));
         });
-        con.db.entity.onUpdate((ctx: EventContext, oldEntity: Entity, newEntity: Entity) => {
-           console.log('Entity Updated:', oldEntity, '->', newEntity, 'Context:', ctx);
-          setEntities(prev => new Map(prev).set(newEntity.id, newEntity));
-        });
-        con.db.entity.onDelete((ctx: EventContext, entity: Entity) => {
-          console.log('Entity Deleted:', entity, 'Context:', ctx);
+        con.db.entity.onDelete((_ctx: EventContext, entity: Entity) => {
+          console.log('Entity Deleted:', entity);
           setEntities(prev => {
             const newMap = new Map(prev);
             newMap.delete(entity.id);
             return newMap;
           });
+          setEntityTransforms(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(entity.id);
+            return newMap;
+          });
+        });
+
+        // EntityTransform table callbacks
+        con.db.entityTransform.onInsert((_ctx: EventContext, transform: EntityTransform) => {
+          console.log('EntityTransform Inserted:', transform);
+          setEntityTransforms(prev => new Map(prev).set(transform.entityId, transform));
+        });
+        con.db.entityTransform.onUpdate((_ctx: EventContext, _oldTransform: EntityTransform, newTransform: EntityTransform) => {
+          console.log('EntityTransform Updated:', newTransform);
+          setEntityTransforms(prev => new Map(prev).set(newTransform.entityId, newTransform));
         });
 
         // Optional: Listen for reducer events
@@ -74,14 +82,20 @@ function App() {
          });
 
         // Subscribe using the subscription builder
-        con.subscriptionBuilder().subscribe('SELECT * FROM entity');
-        console.log('Subscribed to Entity table.');
+        // Subscribe to both tables using a single call
+        con.subscriptionBuilder()
+           .subscribe([
+               'SELECT * FROM entity',
+               'SELECT * FROM entity_transform'
+           ]); // Removed incorrect .execute() call
+        console.log('Subscribed to Entity and EntityTransform tables.');
       })
       .onDisconnect(() => {
         console.log('Disconnected from SpacetimeDB.');
         connectionRef.current = null;
         identityRef.current = null;
         setEntities(new Map());
+        setEntityTransforms(new Map());
       })
       // Corrected onConnectError signature (context first)
       .onConnectError((ctx: ErrorContext, err: Error) => {
@@ -130,9 +144,20 @@ function App() {
         <Plane args={[200, 200]} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
           <meshStandardMaterial color="grey" />
         </Plane>
-        {Array.from(entities.values()).map((entity: Entity) => (
-          <EntityMesh key={entity.id} position={[entity.x, entity.y, entity.z]} />
-        ))}
+        {/* Map over entities and use their ID to find the transform */} 
+        {Array.from(entities.values()).map((entity) => {
+          const transform = entityTransforms.get(entity.id);
+          // Render only if transform data exists
+          if (transform) {
+            return (
+              <EntityMesh
+                key={entity.id}
+                position={[transform.x, transform.y, transform.z]}
+              />
+            );
+          }
+          return null; // Don't render if transform isn't found yet
+        })}
         <OrbitControls />
       </Canvas>
     </div>

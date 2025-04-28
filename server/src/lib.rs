@@ -1,7 +1,6 @@
 use log::info;
 use spacetimedb::{reducer, table, ReducerContext, ScheduleAt, Table};
 use std::collections::HashMap;
-use std::time::Duration;
 
 // Use rapier's re-exported nalgebra and specific pipeline types
 use rapier3d::na::Vector3;
@@ -100,19 +99,31 @@ pub fn init_physics(_ctx: &ReducerContext) -> Result<(), String> {
     info!("Initializing physics world and timer.");
     let mut state = PHYSICS_STATE.lock().map_err(|e| e.to_string())?;
 
+    // Explicitly set the integration timestep (dt)
+    state.integration_parameters.dt = 16.0 / 1000.0; // 16 milliseconds in seconds
+                                                     // Increase solver iterations
+    if let Some(iterations) = std::num::NonZeroUsize::new(10) {
+        state.integration_parameters.num_solver_iterations = iterations;
+    } else {
+        // This case should be impossible for a literal 10
+        // If it somehow occurs, log it.
+        info!("Warning: Failed to create NonZeroUsize for solver iterations");
+    }
+    // Explicitly set damping_ratio to 0.0
+    state.integration_parameters.damping_ratio = 0.0;
+    // Removed parameter logging
+
     let ground_collider = ColliderBuilder::cuboid(100.0, 0.1, 100.0).build();
     state.collider_set.insert(ground_collider);
 
-    // Comment out the timer insertion to disable physics ticks for now
-    /*
-    ctx.db
+    // Re-enable the timer insertion
+    _ctx.db
         .physics_tick_timer()
         .try_insert(PhysicsTickTimer {
             id: 0,
-            scheduled_at: ScheduleAt::Interval(Duration::from_millis(16).into()),
+            scheduled_at: ScheduleAt::Interval(std::time::Duration::from_millis(16).into()),
         })
         .map_err(|e| e.to_string())?;
-    */
 
     Ok(())
 }
@@ -121,28 +132,40 @@ pub fn init_physics(_ctx: &ReducerContext) -> Result<(), String> {
 pub fn spawn(ctx: &ReducerContext, x: f64, y: f64, z: f64) -> Result<(), String> {
     info!("Spawn called with coords: x={}, y={}, z={}", x, y, z);
     let entity_id = get_next_entity_id(ctx)?;
-    info!("  -> Assigning entity_id: {}", entity_id);
+    // Removed assigning ID log
     ctx.db
         .entity()
         .try_insert(Entity { id: entity_id })
         .map_err(|e| e.to_string())?;
 
     let mut state = PHYSICS_STATE.lock().map_err(|e| e.to_string())?;
+
+    // Destructure state to borrow fields mutably without conflict
+    let PhysicsState {
+        rigid_body_set,
+        collider_set,
+        handle_to_entity_id,
+        .. // Ignore other fields for now
+    } = &mut *state;
+
+    // Spawn the rigid body higher up (e.g., y=10.0) to allow falling
+    let spawn_y = 10.0;
+    // Removed spawning height log
     let rigid_body = RigidBodyBuilder::dynamic()
-        .translation(Vector3::new(x as f32, y as f32, z as f32))
+        .translation(Vector3::new(x as f32, spawn_y as f32, z as f32)) // Use spawn_y
         .build();
+    // Collider has restitution for bouncing
     let collider = ColliderBuilder::ball(1.0).restitution(0.7).build();
 
     // Insert rigid body
-    let rigid_body_handle = state.rigid_body_set.insert(rigid_body);
+    let rigid_body_handle = rigid_body_set.insert(rigid_body);
 
-    // Insert collider separately (no parenting needed for basic simulation)
-    let collider_handle = state.collider_set.insert(collider);
+    // Insert collider and attach it to the rigid body using destructured refs
+    let collider_handle =
+        collider_set.insert_with_parent(collider, rigid_body_handle, rigid_body_set);
 
     // Associate the body handle with the entity ID for lookups
-    state
-        .handle_to_entity_id
-        .insert(rigid_body_handle, entity_id);
+    handle_to_entity_id.insert(rigid_body_handle, entity_id);
 
     // Store raw parts (no borrow conflict here)
     let (rb_idx, rb_gen) = rigid_body_handle.into_raw_parts();
@@ -157,11 +180,17 @@ pub fn spawn(ctx: &ReducerContext, x: f64, y: f64, z: f64) -> Result<(), String>
             co_handle_generation: co_gen,
         })
         .map_err(|e| e.to_string())?;
+    // Insert transform with the *actual* spawn coordinates used by physics
     ctx.db
         .entity_transform()
-        .try_insert(EntityTransform { entity_id, x, y, z })
+        .try_insert(EntityTransform {
+            entity_id,
+            x,
+            y: spawn_y,
+            z,
+        }) // Use spawn_y here too
         .map_err(|e| e.to_string())?;
-    info!("  -> Spawn successful for entity_id: {}", entity_id);
+    info!("  -> Spawn successful for entity_id: {}", entity_id); // Keep success log
     Ok(())
 }
 
@@ -176,32 +205,34 @@ pub fn process_physics_tick(ctx: &ReducerContext, _timer: PhysicsTickTimer) -> R
         rigid_body_set,
         collider_set,
         integration_parameters,
-        physics_pipeline, // We need this to call step
+        ref mut physics_pipeline, // Use `ref mut` to get a mutable reference
         island_manager,
         broad_phase,
         narrow_phase,
+        ref mut impulse_joint_set,   // Use `ref mut`
+        ref mut multibody_joint_set, // Use `ref mut`
+        ref mut ccd_solver,          // Use `ref mut`
+        handle_to_entity_id: _,      // We don't need handle_to_entity_id *within* this borrow scope
+    } = &mut *state; // Dereference the MutexGuard and get a mutable reference to PhysicsState
+
+    // Now call step using the destructured references (with all arguments)
+    physics_pipeline.step(
+        &Vector3::new(0.0, -9.81, 0.0),
+        integration_parameters,
+        island_manager,
+        broad_phase,
+        narrow_phase,
+        rigid_body_set,
+        collider_set,
         impulse_joint_set,
         multibody_joint_set,
         ccd_solver,
-        handle_to_entity_id: _, // We don't need handle_to_entity_id *within* this borrow scope
-    } = &mut *state; // Dereference the MutexGuard and get a mutable reference to PhysicsState
-
-    // Now call step using the destructured references
-    physics_pipeline.step(
-        &Vector3::new(0.0, -9.81, 0.0),
-        integration_parameters, // Implicitly borrows immutably from the &mut PhysicsState borrow
-        island_manager,         // Implicitly borrows mutably
-        broad_phase,            // Implicitly borrows mutably
-        narrow_phase,           // Implicitly borrows mutably
-        rigid_body_set,         // Implicitly borrows mutably
-        collider_set,           // Implicitly borrows mutably
-        impulse_joint_set,      // Implicitly borrows mutably
-        multibody_joint_set,    // Implicitly borrows mutably
-        ccd_solver,             // Implicitly borrows mutably
-        None,
-        &(),
-        &(),
+        None, // query_pipeline
+        &(),  // physics_hooks
+        &(),  // event_handler
     );
+
+    // Removed post-step logging loop
 
     // The borrow from the destructuring above ends here.
     // Now, re-access the state fields needed for the loop via the original MutexGuard `state`.
@@ -210,36 +241,25 @@ pub fn process_physics_tick(ctx: &ReducerContext, _timer: PhysicsTickTimer) -> R
         if rigid_body.is_dynamic() && state.handle_to_entity_id.contains_key(&handle) {
             let entity_id = state.handle_to_entity_id[&handle];
             let pos = rigid_body.translation();
-            // Log the raw f32 position from Rapier
-            info!(
-                "Physics tick: Entity {}, Raw Position (f32): {:?}",
-                entity_id, pos
-            );
+            // Removed physics tick + velocity/sleeping/type logs
 
-            // Find the existing transform
-            if let Some(mut transform) = ctx.db.entity_transform().entity_id().find(&entity_id) {
-                // Update its fields
-                transform.x = pos.x as f64;
-                transform.y = pos.y as f64;
-                transform.z = pos.z as f64;
-                // Use try_insert() and explicitly handle the result to avoid panic
-                match ctx.db.entity_transform().try_insert(transform) {
-                    Ok(_) => { /* Success, do nothing */ }
-                    Err(e) => {
-                        // Log the specific error if try_insert fails
-                        info!(
-                            "Physics tick: Failed to update EntityTransform for entity_id {}: {}",
-                            entity_id, e
-                        );
-                    }
-                }
-            } else {
-                // Row not found, log it
-                info!(
-                    "Physics tick: Transform for entity {} not found, skipping update.",
-                    entity_id
-                );
-            }
+            // Construct the struct with the updated data
+            let updated_transform = EntityTransform {
+                entity_id,
+                x: pos.x as f64,
+                y: pos.y as f64,
+                z: pos.z as f64,
+            };
+
+            // Use the .update() method, accessed via the primary key index.
+            // Assuming it returns () on success or panics on failure (e.g., row not found).
+            ctx.db
+                .entity_transform()
+                .entity_id()
+                .update(updated_transform);
+
+            // Note: We removed the find/delete/insert logic and match statement.
+            // The .update() method should handle finding and updating the row based on the primary key.
         }
     }
     Ok(())

@@ -32,16 +32,30 @@ import {
 } from "@clockworklabs/spacetimedb-sdk";
 
 // Import and reexport all reducer arg types
+import { ProcessPhysicsTick } from "./process_physics_tick_reducer.ts";
+export { ProcessPhysicsTick };
 import { Spawn } from "./spawn_reducer.ts";
 export { Spawn };
 
 // Import and reexport all table handle types
 import { EntityTableHandle } from "./entity_table.ts";
 export { EntityTableHandle };
+import { EntityPhysicsTableHandle } from "./entity_physics_table.ts";
+export { EntityPhysicsTableHandle };
+import { EntityTransformTableHandle } from "./entity_transform_table.ts";
+export { EntityTransformTableHandle };
+import { PhysicsTickTimerTableHandle } from "./physics_tick_timer_table.ts";
+export { PhysicsTickTimerTableHandle };
 
 // Import and reexport all types
 import { Entity } from "./entity_type.ts";
 export { Entity };
+import { EntityPhysics } from "./entity_physics_type.ts";
+export { EntityPhysics };
+import { EntityTransform } from "./entity_transform_type.ts";
+export { EntityTransform };
+import { PhysicsTickTimer } from "./physics_tick_timer_type.ts";
+export { PhysicsTickTimer };
 
 const REMOTE_MODULE = {
   tables: {
@@ -50,8 +64,27 @@ const REMOTE_MODULE = {
       rowType: Entity.getTypeScriptAlgebraicType(),
       primaryKey: "id",
     },
+    entity_physics: {
+      tableName: "entity_physics",
+      rowType: EntityPhysics.getTypeScriptAlgebraicType(),
+      primaryKey: "entityId",
+    },
+    entity_transform: {
+      tableName: "entity_transform",
+      rowType: EntityTransform.getTypeScriptAlgebraicType(),
+      primaryKey: "entityId",
+    },
+    physics_tick_timer: {
+      tableName: "physics_tick_timer",
+      rowType: PhysicsTickTimer.getTypeScriptAlgebraicType(),
+      primaryKey: "id",
+    },
   },
   reducers: {
+    process_physics_tick: {
+      reducerName: "process_physics_tick",
+      argsType: ProcessPhysicsTick.getTypeScriptAlgebraicType(),
+    },
     spawn: {
       reducerName: "spawn",
       argsType: Spawn.getTypeScriptAlgebraicType(),
@@ -83,11 +116,28 @@ const REMOTE_MODULE = {
 
 // A type representing all the possible variants of a reducer.
 export type Reducer = never
+| { name: "ProcessPhysicsTick", args: ProcessPhysicsTick }
 | { name: "Spawn", args: Spawn }
 ;
 
 export class RemoteReducers {
   constructor(private connection: DbConnectionImpl, private setCallReducerFlags: SetReducerFlags) {}
+
+  processPhysicsTick(timer: PhysicsTickTimer) {
+    const __args = { timer };
+    let __writer = new BinaryWriter(1024);
+    ProcessPhysicsTick.getTypeScriptAlgebraicType().serialize(__writer, __args);
+    let __argsBuffer = __writer.getBuffer();
+    this.connection.callReducer("process_physics_tick", __argsBuffer, this.setCallReducerFlags.processPhysicsTickFlags);
+  }
+
+  onProcessPhysicsTick(callback: (ctx: ReducerEventContext, timer: PhysicsTickTimer) => void) {
+    this.connection.onReducer("process_physics_tick", callback);
+  }
+
+  removeOnProcessPhysicsTick(callback: (ctx: ReducerEventContext, timer: PhysicsTickTimer) => void) {
+    this.connection.offReducer("process_physics_tick", callback);
+  }
 
   spawn(x: number, y: number, z: number) {
     const __args = { x, y, z };
@@ -108,6 +158,11 @@ export class RemoteReducers {
 }
 
 export class SetReducerFlags {
+  processPhysicsTickFlags: CallReducerFlags = 'FullUpdate';
+  processPhysicsTick(flags: CallReducerFlags) {
+    this.processPhysicsTickFlags = flags;
+  }
+
   spawnFlags: CallReducerFlags = 'FullUpdate';
   spawn(flags: CallReducerFlags) {
     this.spawnFlags = flags;
@@ -120,6 +175,18 @@ export class RemoteTables {
 
   get entity(): EntityTableHandle {
     return new EntityTableHandle(this.connection.clientCache.getOrCreateTable<Entity>(REMOTE_MODULE.tables.entity));
+  }
+
+  get entityPhysics(): EntityPhysicsTableHandle {
+    return new EntityPhysicsTableHandle(this.connection.clientCache.getOrCreateTable<EntityPhysics>(REMOTE_MODULE.tables.entity_physics));
+  }
+
+  get entityTransform(): EntityTransformTableHandle {
+    return new EntityTransformTableHandle(this.connection.clientCache.getOrCreateTable<EntityTransform>(REMOTE_MODULE.tables.entity_transform));
+  }
+
+  get physicsTickTimer(): PhysicsTickTimerTableHandle {
+    return new PhysicsTickTimerTableHandle(this.connection.clientCache.getOrCreateTable<PhysicsTickTimer>(REMOTE_MODULE.tables.physics_tick_timer));
   }
 }
 

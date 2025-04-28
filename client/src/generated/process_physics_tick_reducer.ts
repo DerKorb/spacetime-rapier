@@ -30,32 +30,34 @@ import {
   Timestamp,
   deepEqual,
 } from "@clockworklabs/spacetimedb-sdk";
-export type Entity = {
-  id: number,
+
+import { PhysicsTickTimer as __PhysicsTickTimer } from "./physics_tick_timer_type";
+
+export type ProcessPhysicsTick = {
+  timer: __PhysicsTickTimer,
 };
 
 /**
  * A namespace for generated helper functions.
  */
-export namespace Entity {
+export namespace ProcessPhysicsTick {
   /**
   * A function which returns this type represented as an AlgebraicType.
   * This function is derived from the AlgebraicType used to generate this type.
   */
   export function getTypeScriptAlgebraicType(): AlgebraicType {
     return AlgebraicType.createProductType([
-      new ProductTypeElement("id", AlgebraicType.createU32Type()),
+      new ProductTypeElement("timer", __PhysicsTickTimer.getTypeScriptAlgebraicType()),
     ]);
   }
 
-  export function serialize(writer: BinaryWriter, value: Entity): void {
-    Entity.getTypeScriptAlgebraicType().serialize(writer, value);
+  export function serialize(writer: BinaryWriter, value: ProcessPhysicsTick): void {
+    ProcessPhysicsTick.getTypeScriptAlgebraicType().serialize(writer, value);
   }
 
-  export function deserialize(reader: BinaryReader): Entity {
-    return Entity.getTypeScriptAlgebraicType().deserialize(reader);
+  export function deserialize(reader: BinaryReader): ProcessPhysicsTick {
+    return ProcessPhysicsTick.getTypeScriptAlgebraicType().deserialize(reader);
   }
 
 }
-
 
