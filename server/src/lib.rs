@@ -216,7 +216,7 @@ pub fn spawn_exploding_spheres(ctx: &ReducerContext) -> Result<(), String> {
         .. // Ignore other fields for now
     } = &mut *state;
 
-    for i in 0..100 {
+    for i in 0..1000 {
         let entity_id = get_next_entity_id(ctx)?;
         ctx.db
             .entity()
