@@ -20,7 +20,7 @@ const SPACETIMEDB_HOST = 'localhost:3000';
 const SPACETIMEDB_DB_NAME = 'spacetime';
 
 // Instancing constants
-const MAX_INSTANCES = 5000; // Set a max capacity for the instanced mesh
+const MAX_INSTANCES = 500; // Set a max capacity for the instanced mesh
 
 // Define geometry and material outside the component for reuse
 const sphereGeometry = new THREE.SphereGeometry(0.2, 16, 16);
@@ -84,6 +84,9 @@ function App() {
               return; // Skip this update
             }
             index = nextAvailableIndexRef.current++;
+            // --- Ensure mesh count includes the new index ---
+            mesh.count = Math.max(mesh.count, index + 1);
+            // -------------------------------------------------
           }
           entityIdToIndexRef.current.set(entityId, index);
         }
@@ -152,14 +155,14 @@ function App() {
           // console.log('EntityTransform Inserted:', transform);
           // Buffer insert/update
           pendingUpdatesRef.current.set(transform.entityId, { type: 'upsert', transform });
-          setEntityTransforms(prev => new Map(prev).set(transform.entityId, transform));
+          // REMOVED: setEntityTransforms(prev => new Map(prev).set(transform.entityId, transform));
           scheduleStateUpdate();
         });
         con.db.entityTransform.onUpdate((_ctx: EventContext, _oldTransform: EntityTransform, newTransform: EntityTransform) => {
           // console.log('EntityTransform Updated:', newTransform);
           // Buffer insert/update
           pendingUpdatesRef.current.set(newTransform.entityId, { type: 'upsert', transform: newTransform });
-          setEntityTransforms(prev => new Map(prev).set(newTransform.entityId, newTransform));
+          // REMOVED: setEntityTransforms(prev => new Map(prev).set(newTransform.entityId, newTransform));
           scheduleStateUpdate();
         });
         con.db.entityTransform.onDelete((_ctx: EventContext, transform: EntityTransform) => {
