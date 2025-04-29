@@ -10,6 +10,10 @@ use rapier3d::prelude::*;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 
+// Add rand imports
+use rand::Rng; // For random number generation
+use rand::thread_rng; // For default RNG
+
 // --- Physics State ---
 
 struct PhysicsState {
@@ -191,6 +195,88 @@ pub fn spawn(ctx: &ReducerContext, x: f64, y: f64, z: f64) -> Result<(), String>
         }) // Use spawn_y here too
         .map_err(|e| e.to_string())?;
     info!("  -> Spawn successful for entity_id: {}", entity_id); // Keep success log
+    Ok(())
+}
+
+#[reducer]
+pub fn spawn_exploding_spheres(ctx: &ReducerContext) -> Result<(), String> {
+    info!("Spawn exploding spheres called");
+    let mut state = PHYSICS_STATE.lock().map_err(|e| e.to_string())?;
+    // Use the deterministic RNG from the ReducerContext
+    let mut rng = ctx.rng();
+    let explosion_speed = 20.0;
+
+    // Destructure state to borrow fields mutably without conflict
+    let PhysicsState {
+        rigid_body_set,
+        collider_set,
+        handle_to_entity_id,
+        .. // Ignore other fields for now
+    } = &mut *state;
+
+    for i in 0..100 {
+        let entity_id = get_next_entity_id(ctx)?;
+        ctx.db
+            .entity()
+            .try_insert(Entity { id: entity_id })
+            .map_err(|e| format!("Failed to insert entity {}: {}", i, e))?;
+
+        // Generate random direction
+        let rand_x = rng.gen::<f32>() * 2.0 - 1.0;
+        let rand_y = rng.gen::<f32>() * 2.0 - 1.0;
+        let rand_z = rng.gen::<f32>() * 2.0 - 1.0;
+        // Use fully qualified path and new_normalize
+        let direction = rapier3d::na::Unit::new_normalize(Vector3::new(rand_x, rand_y, rand_z));
+            // .unwrap_or(Vector3::y_axis()); // new_normalize handles zero vectors
+
+        // Create rigid body at origin with initial velocity
+        let rigid_body = RigidBodyBuilder::dynamic()
+            .translation(Vector3::new(0.0, 1.0, 0.0)) // Start slightly above origin
+            .linvel(direction.into_inner() * explosion_speed)
+            .build();
+
+        // Collider with restitution
+        let collider = ColliderBuilder::ball(0.2) // Smaller balls for explosion
+            .restitution(0.7)
+            .density(1.0) // Give them some mass
+            .build();
+
+        // Insert rigid body
+        let rigid_body_handle = rigid_body_set.insert(rigid_body);
+
+        // Insert collider and attach
+        let collider_handle =
+            collider_set.insert_with_parent(collider, rigid_body_handle, rigid_body_set);
+
+        // Associate handle with entity ID
+        handle_to_entity_id.insert(rigid_body_handle, entity_id);
+
+        // Store raw parts
+        let (rb_idx, rb_gen) = rigid_body_handle.into_raw_parts();
+        let (co_idx, co_gen) = collider_handle.into_raw_parts();
+        ctx.db
+            .entity_physics()
+            .try_insert(EntityPhysics {
+                entity_id,
+                rb_handle_index: rb_idx,
+                rb_handle_generation: rb_gen,
+                co_handle_index: co_idx,
+                co_handle_generation: co_gen,
+            })
+            .map_err(|e| format!("Failed to insert entity_physics for {}: {}", i, e))?;
+
+        // Insert initial transform at origin
+        ctx.db
+            .entity_transform()
+            .try_insert(EntityTransform {
+                entity_id,
+                x: 0.0,
+                y: 1.0, // Start slightly above origin
+                z: 0.0,
+            })
+            .map_err(|e| format!("Failed to insert entity_transform for {}: {}", i, e))?;
+    }
+    info!("  -> Spawned 100 exploding spheres successfully");
     Ok(())
 }
 

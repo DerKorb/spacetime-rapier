@@ -36,6 +36,8 @@ import { ProcessPhysicsTick } from "./process_physics_tick_reducer.ts";
 export { ProcessPhysicsTick };
 import { Spawn } from "./spawn_reducer.ts";
 export { Spawn };
+import { SpawnExplodingSpheres } from "./spawn_exploding_spheres_reducer.ts";
+export { SpawnExplodingSpheres };
 
 // Import and reexport all table handle types
 import { EntityTableHandle } from "./entity_table.ts";
@@ -89,6 +91,10 @@ const REMOTE_MODULE = {
       reducerName: "spawn",
       argsType: Spawn.getTypeScriptAlgebraicType(),
     },
+    spawn_exploding_spheres: {
+      reducerName: "spawn_exploding_spheres",
+      argsType: SpawnExplodingSpheres.getTypeScriptAlgebraicType(),
+    },
   },
   // Constructors which are used by the DbConnectionImpl to
   // extract type information from the generated RemoteModule.
@@ -118,6 +124,7 @@ const REMOTE_MODULE = {
 export type Reducer = never
 | { name: "ProcessPhysicsTick", args: ProcessPhysicsTick }
 | { name: "Spawn", args: Spawn }
+| { name: "SpawnExplodingSpheres", args: SpawnExplodingSpheres }
 ;
 
 export class RemoteReducers {
@@ -155,6 +162,18 @@ export class RemoteReducers {
     this.connection.offReducer("spawn", callback);
   }
 
+  spawnExplodingSpheres() {
+    this.connection.callReducer("spawn_exploding_spheres", new Uint8Array(0), this.setCallReducerFlags.spawnExplodingSpheresFlags);
+  }
+
+  onSpawnExplodingSpheres(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.onReducer("spawn_exploding_spheres", callback);
+  }
+
+  removeOnSpawnExplodingSpheres(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.offReducer("spawn_exploding_spheres", callback);
+  }
+
 }
 
 export class SetReducerFlags {
@@ -166,6 +185,11 @@ export class SetReducerFlags {
   spawnFlags: CallReducerFlags = 'FullUpdate';
   spawn(flags: CallReducerFlags) {
     this.spawnFlags = flags;
+  }
+
+  spawnExplodingSpheresFlags: CallReducerFlags = 'FullUpdate';
+  spawnExplodingSpheres(flags: CallReducerFlags) {
+    this.spawnExplodingSpheresFlags = flags;
   }
 
 }

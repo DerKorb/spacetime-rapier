@@ -1,0 +1,48 @@
+[
+  {
+    "type": "session",
+    "timestamp": "2025-04-29T11:48:34.354Z",
+    "data": {
+      "id": "1745927314354",
+      "project": "spacetime-rapier",
+      "start": "2025-04-29T11:48:34.354Z",
+      "end": "2025-04-29T11:48:34.354Z"
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T11:49:03.424Z",
+    "data": {
+      "id": "1745927343424",
+      "timestamp": "2025-04-29T11:49:03.424Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/server/src/lib.rs",
+      "changedLines": [
+        0,
+        12,
+        196,
+        200,
+        204
+      ]
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T11:50:09.145Z",
+    "data": {
+      "id": "1745927409145",
+      "timestamp": "2025-04-29T11:50:09.145Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/client/src/App.tsx",
+      "changedLines": [
+        0,
+        1,
+        2,
+        4,
+        10,
+        168,
+        170
+      ]
+    }
+  }
+]

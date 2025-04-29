@@ -2,20 +2,20 @@ import { OrbitControls, Plane, Sphere } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { useEffect, useRef, useState } from 'react';
 // Import physics components
-import { Physics, RigidBody, BallCollider, CuboidCollider } from '@react-three/rapier';
+import { Physics, RigidBody } from '@react-three/rapier';
 
 // Import base types from SDK
 import { Identity } from '@clockworklabs/spacetimedb-sdk';
 
 // Import generated types and connection class
 import {
-  DbConnection,
-  Entity,
-  EntityTransform,
-  ErrorContext,
-  // Import generated context types (correctly aliased)
-  EventContext,
-  ReducerEventContext
+    DbConnection,
+    Entity,
+    EntityTransform,
+    ErrorContext,
+    // Import generated context types (correctly aliased)
+    EventContext,
+    ReducerEventContext
 } from './generated';
 
 // SpacetimeDB connection details
@@ -166,14 +166,33 @@ function App() {
     }
   };
 
+  // New function to call the explosion reducer
+  const spawnExplosion = () => {
+    if (connectionRef.current && connectionRef.current.reducers) {
+      console.log(`Calling spawn_exploding_spheres reducer...`);
+      try {
+        // Call the generated reducer function (no arguments needed)
+        connectionRef.current.reducers.spawnExplodingSpheres();
+      } catch (err) {
+        console.error("Failed to call spawn_exploding_spheres reducer:", err);
+      }
+    } else {
+      console.warn("SpacetimeDB client not connected or reducers not available, cannot spawn explosion.");
+    }
+  };
+
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
-      <button
-        onClick={spawnEntity}
-        style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 1 }}
-      >
-        Spawn Entity
-      </button>
+      {/* Group buttons together */}
+      <div style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 1, display: 'flex', gap: '10px' }}>
+        <button onClick={spawnEntity}>
+          Spawn Entity
+        </button>
+        {/* New button for explosion */}
+        <button onClick={spawnExplosion}>
+          Spawn Explosion
+        </button>
+      </div>
       <Canvas camera={{ position: [0, 15, 30], fov: 75 }}>
         <ambientLight intensity={0.4} />
         <directionalLight position={[1, 1, 1]} intensity={1} />
