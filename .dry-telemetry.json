@@ -6,7 +6,7 @@
       "id": "1745927314354",
       "project": "spacetime-rapier",
       "start": "2025-04-29T11:48:34.354Z",
-      "end": "2025-04-29T11:48:34.354Z"
+      "end": "2025-04-29T11:53:57.652Z"
     }
   },
   {
@@ -43,6 +43,261 @@
         168,
         170
       ]
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T11:51:43.771Z",
+    "data": {
+      "id": "1745927503771",
+      "timestamp": "2025-04-29T11:51:43.771Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/server/src/lib.rs",
+      "changedLines": [
+        282
+      ]
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T11:51:53.608Z",
+    "data": {
+      "id": "1745927513608",
+      "timestamp": "2025-04-29T11:51:53.608Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/client/src/App.tsx",
+      "changedLines": [
+        0,
+        1,
+        2,
+        183,
+        209
+      ]
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T11:52:48.973Z",
+    "data": {
+      "id": "1745927568973",
+      "timestamp": "2025-04-29T11:52:48.973Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/server/src/lib.rs",
+      "changedLines": [
+        0,
+        282,
+        319,
+        320,
+        321
+      ]
+    }
+  },
+  {
+    "type": "session",
+    "timestamp": "2025-04-29T11:53:57.652Z",
+    "data": {
+      "id": "1745927314354",
+      "project": "spacetime-rapier",
+      "start": "2025-04-29T11:48:34.354Z",
+      "end": "2025-04-29T11:53:57.652Z"
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T11:55:58.879Z",
+    "data": {
+      "id": "1745927758879",
+      "timestamp": "2025-04-29T11:55:58.879Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/client/src/App.tsx",
+      "changedLines": [
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        78,
+        83,
+        87,
+        102,
+        106,
+        116,
+        126
+      ]
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T11:56:01.469Z",
+    "data": {
+      "id": "1745927761469",
+      "timestamp": "2025-04-29T11:56:01.469Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/client/src/App.tsx",
+      "changedLines": []
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T11:56:02.849Z",
+    "data": {
+      "id": "1745927762849",
+      "timestamp": "2025-04-29T11:56:02.849Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/client/src/App.tsx",
+      "changedLines": []
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T11:57:18.171Z",
+    "data": {
+      "id": "1745927838171",
+      "timestamp": "2025-04-29T11:57:18.171Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/server/src/lib.rs",
+      "changedLines": [
+        0,
+        3,
+        282,
+        284,
+        345,
+        350,
+        411,
+        413,
+        415,
+        417,
+        418,
+        420
+      ]
+    }
+  },
+  {
+    "type": "session",
+    "timestamp": "2025-04-29T11:58:52.112Z",
+    "data": {
+      "id": "1745927932112",
+      "project": "spacetime-rapier",
+      "start": "2025-04-29T11:58:52.112Z",
+      "end": "2025-04-29T11:59:44.583Z"
+    }
+  },
+  {
+    "type": "session",
+    "timestamp": "2025-04-29T11:59:44.583Z",
+    "data": {
+      "id": "1745927932112",
+      "project": "spacetime-rapier",
+      "start": "2025-04-29T11:58:52.112Z",
+      "end": "2025-04-29T11:59:44.583Z"
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T12:00:34.366Z",
+    "data": {
+      "id": "1745928034366",
+      "timestamp": "2025-04-29T12:00:34.366Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/server/src/lib.rs",
+      "changedLines": [
+        0,
+        3,
+        282,
+        284,
+        345,
+        350,
+        415,
+        416,
+        419,
+        423
+      ]
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T12:00:49.976Z",
+    "data": {
+      "id": "1745928049976",
+      "timestamp": "2025-04-29T12:00:49.976Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/server/src/lib.rs",
+      "changedLines": []
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T12:02:08.707Z",
+    "data": {
+      "id": "1745928128707",
+      "timestamp": "2025-04-29T12:02:08.707Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/server/src/lib.rs",
+      "changedLines": [
+        350
+      ]
+    }
+  },
+  {
+    "type": "session",
+    "timestamp": "2025-04-29T12:03:09.297Z",
+    "data": {
+      "id": "1745928189297",
+      "project": "spacetime-rapier",
+      "start": "2025-04-29T12:03:09.297Z",
+      "end": "2025-04-29T12:03:09.297Z"
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T12:04:06.945Z",
+    "data": {
+      "id": "1745928246944",
+      "timestamp": "2025-04-29T12:04:06.944Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/README.md",
+      "changedLines": [
+        4,
+        5,
+        11,
+        19,
+        20,
+        26,
+        32,
+        35,
+        91,
+        93,
+        94,
+        100,
+        113,
+        138,
+        140,
+        143
+      ]
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T12:04:45.653Z",
+    "data": {
+      "id": "1745928285653",
+      "timestamp": "2025-04-29T12:04:45.653Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/README.md",
+      "changedLines": []
+    }
+  },
+  {
+    "type": "fileSave",
+    "timestamp": "2025-04-29T12:04:48.520Z",
+    "data": {
+      "id": "1745928288520",
+      "timestamp": "2025-04-29T12:04:48.520Z",
+      "type": "fileSave",
+      "filePath": "/home/ksollner/projects/spacetime-rapier/server/src/lib.rs",
+      "changedLines": []
     }
   }
 ]

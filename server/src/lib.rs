@@ -1,6 +1,8 @@
 use log::info;
 use spacetimedb::{reducer, table, ReducerContext, ScheduleAt, Table};
 use std::collections::HashMap;
+// Remove Instant import
+// use std::time::Instant;
 
 // Use rapier's re-exported nalgebra and specific pipeline types
 use rapier3d::na::Vector3;
@@ -281,7 +283,74 @@ pub fn spawn_exploding_spheres(ctx: &ReducerContext) -> Result<(), String> {
 }
 
 #[reducer]
+pub fn reset_simulation(ctx: &ReducerContext) -> Result<(), String> {
+    info!("Resetting simulation...");
+    let mut state = PHYSICS_STATE.lock().map_err(|e| e.to_string())?;
+
+    // Collect entity IDs and physics handles to avoid borrowing issues
+    let mut entities_to_remove: Vec<(u32, RigidBodyHandle, ColliderHandle)> = Vec::new();
+    for entity_physics in ctx.db.entity_physics().iter() {
+        // Reconstruct handles from raw parts
+        let rb_handle = RigidBodyHandle::from_raw_parts(
+            entity_physics.rb_handle_index,
+            entity_physics.rb_handle_generation,
+        );
+        let co_handle = ColliderHandle::from_raw_parts(
+            entity_physics.co_handle_index,
+            entity_physics.co_handle_generation,
+        );
+        entities_to_remove.push((entity_physics.entity_id, rb_handle, co_handle));
+    }
+
+    // Destructure state for mutable access
+    let PhysicsState {
+        rigid_body_set,
+        collider_set,
+        island_manager,
+        handle_to_entity_id,
+        .. // Other fields are not directly modified here but needed for remove
+    } = &mut *state;
+
+    info!("Removing {} physics bodies and colliders.", entities_to_remove.len());
+    for (entity_id, rb_handle, co_handle) in &entities_to_remove {
+        // Remove from physics simulation
+        // Note: island_manager is needed for removal
+        rigid_body_set.remove(
+            *rb_handle,
+            island_manager,
+            collider_set,
+            &mut ImpulseJointSet::new(),
+            &mut MultibodyJointSet::new(),
+            true, // Wake up bodies touching the removed one
+        );
+        // Collider removal doesn't require island_manager etc.
+        collider_set.remove(*co_handle, island_manager, rigid_body_set, true);
+
+        // Remove from handle mapping
+        handle_to_entity_id.remove(rb_handle);
+
+        // Delete from SpacetimeDB tables
+        // It's often safer to delete *after* processing physics
+        // Use primary key indexes for deletion
+        ctx.db.entity().id().delete(entity_id);
+        ctx.db.entity_physics().entity_id().delete(entity_id);
+        ctx.db.entity_transform().entity_id().delete(entity_id);
+    }
+
+    info!("Simulation reset complete. {} entities removed.", entities_to_remove.len());
+    Ok(())
+}
+
+#[reducer]
 pub fn process_physics_tick(ctx: &ReducerContext, _timer: PhysicsTickTimer) -> Result<(), String> {
+    // Removed start time logging
+    // let start_time = Instant::now();
+    // info!("process_physics_tick started at {:?}", start_time);
+
+    // Log invocation using context timestamp (less precise for duration, but available)
+    // Access timestamp as a field, not a method
+    info!("process_physics_tick invoked. Timestamp: {}", ctx.timestamp);
+
     let mut state = PHYSICS_STATE.lock().map_err(|e| e.to_string())?;
 
     // Destructure the state completely for the step call.
@@ -348,5 +417,11 @@ pub fn process_physics_tick(ctx: &ReducerContext, _timer: PhysicsTickTimer) -> R
             // The .update() method should handle finding and updating the row based on the primary key.
         }
     }
+
+    // Removed duration logging
+    // let duration = start_time.elapsed();
+    // info!("process_physics_tick finished. Duration: {:?}", duration);
+    info!("process_physics_tick finished."); // Simple finish log
+
     Ok(())
 }

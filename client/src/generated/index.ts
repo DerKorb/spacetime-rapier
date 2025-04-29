@@ -34,6 +34,8 @@ import {
 // Import and reexport all reducer arg types
 import { ProcessPhysicsTick } from "./process_physics_tick_reducer.ts";
 export { ProcessPhysicsTick };
+import { ResetSimulation } from "./reset_simulation_reducer.ts";
+export { ResetSimulation };
 import { Spawn } from "./spawn_reducer.ts";
 export { Spawn };
 import { SpawnExplodingSpheres } from "./spawn_exploding_spheres_reducer.ts";
@@ -87,6 +89,10 @@ const REMOTE_MODULE = {
       reducerName: "process_physics_tick",
       argsType: ProcessPhysicsTick.getTypeScriptAlgebraicType(),
     },
+    reset_simulation: {
+      reducerName: "reset_simulation",
+      argsType: ResetSimulation.getTypeScriptAlgebraicType(),
+    },
     spawn: {
       reducerName: "spawn",
       argsType: Spawn.getTypeScriptAlgebraicType(),
@@ -123,6 +129,7 @@ const REMOTE_MODULE = {
 // A type representing all the possible variants of a reducer.
 export type Reducer = never
 | { name: "ProcessPhysicsTick", args: ProcessPhysicsTick }
+| { name: "ResetSimulation", args: ResetSimulation }
 | { name: "Spawn", args: Spawn }
 | { name: "SpawnExplodingSpheres", args: SpawnExplodingSpheres }
 ;
@@ -144,6 +151,18 @@ export class RemoteReducers {
 
   removeOnProcessPhysicsTick(callback: (ctx: ReducerEventContext, timer: PhysicsTickTimer) => void) {
     this.connection.offReducer("process_physics_tick", callback);
+  }
+
+  resetSimulation() {
+    this.connection.callReducer("reset_simulation", new Uint8Array(0), this.setCallReducerFlags.resetSimulationFlags);
+  }
+
+  onResetSimulation(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.onReducer("reset_simulation", callback);
+  }
+
+  removeOnResetSimulation(callback: (ctx: ReducerEventContext) => void) {
+    this.connection.offReducer("reset_simulation", callback);
   }
 
   spawn(x: number, y: number, z: number) {
@@ -180,6 +199,11 @@ export class SetReducerFlags {
   processPhysicsTickFlags: CallReducerFlags = 'FullUpdate';
   processPhysicsTick(flags: CallReducerFlags) {
     this.processPhysicsTickFlags = flags;
+  }
+
+  resetSimulationFlags: CallReducerFlags = 'FullUpdate';
+  resetSimulation(flags: CallReducerFlags) {
+    this.resetSimulationFlags = flags;
   }
 
   spawnFlags: CallReducerFlags = 'FullUpdate';

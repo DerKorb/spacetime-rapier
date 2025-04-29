@@ -9,13 +9,13 @@ import { Identity } from '@clockworklabs/spacetimedb-sdk';
 
 // Import generated types and connection class
 import {
-    DbConnection,
-    Entity,
-    EntityTransform,
-    ErrorContext,
-    // Import generated context types (correctly aliased)
-    EventContext,
-    ReducerEventContext
+  DbConnection,
+  Entity,
+  EntityTransform,
+  ErrorContext,
+  // Import generated context types (correctly aliased)
+  EventContext,
+  ReducerEventContext
 } from './generated';
 
 // SpacetimeDB connection details
@@ -76,16 +76,16 @@ function App() {
       .onConnect((con: DbConnection, identity: Identity) => {
         connectionRef.current = con;
         identityRef.current = identity;
-        console.log('Connected to SpacetimeDB with Identity:', identity.toHexString(), con);
+        // console.log('Connected to SpacetimeDB with Identity:', identity.toHexString(), con);
         // if (token) { localStorage.setItem('auth_token', token); }
 
         // Corrected callback signatures (context first)
         con.db.entity.onInsert((_ctx: EventContext, entity: Entity) => {
-          console.log('Entity Inserted:', entity);
+          // console.log('Entity Inserted:', entity);
           setEntities(prev => new Map(prev).set(entity.id, entity));
         });
         con.db.entity.onDelete((_ctx: EventContext, entity: Entity) => {
-          console.log('Entity Deleted:', entity);
+          // console.log('Entity Deleted:', entity);
           setEntities(prev => {
             const newMap = new Map(prev);
             newMap.delete(entity.id);
@@ -100,11 +100,11 @@ function App() {
 
         // EntityTransform table callbacks
         con.db.entityTransform.onInsert((_ctx: EventContext, transform: EntityTransform) => {
-          console.log('EntityTransform Inserted:', transform);
+          // console.log('EntityTransform Inserted:', transform);
           setEntityTransforms(prev => new Map(prev).set(transform.entityId, transform));
         });
         con.db.entityTransform.onUpdate((_ctx: EventContext, _oldTransform: EntityTransform, newTransform: EntityTransform) => {
-          console.log('EntityTransform Updated:', newTransform);
+          // console.log('EntityTransform Updated:', newTransform);
           // TODO: How should DB updates affect physics?
           // Option 1: Teleport the physics body (might look jarring)
           // Option 2: Apply forces/impulses (more complex)
@@ -114,7 +114,7 @@ function App() {
 
         // Optional: Listen for reducer events
         con.reducers.onSpawn((ctx: ReducerEventContext) => {
-           console.log('Spawn reducer event:', ctx.event);
+          //  console.log('Spawn reducer event:', ctx.event);
          });
 
         // Subscribe using the subscription builder
@@ -124,7 +124,7 @@ function App() {
                'SELECT * FROM entity',
                'SELECT * FROM entity_transform'
            ]); // Removed incorrect .execute() call
-        console.log('Subscribed to Entity and EntityTransform tables.');
+        // console.log('Subscribed to Entity and EntityTransform tables.');
       })
       .onDisconnect(() => {
         console.log('Disconnected from SpacetimeDB.');
@@ -181,6 +181,21 @@ function App() {
     }
   };
 
+  // New function to call the reset reducer
+  const resetSimulation = () => {
+    if (connectionRef.current && connectionRef.current.reducers) {
+      console.log(`Calling reset_simulation reducer...`);
+      try {
+        // Call the generated reducer function (no arguments needed)
+        connectionRef.current.reducers.resetSimulation();
+      } catch (err) {
+        console.error("Failed to call reset_simulation reducer:", err);
+      }
+    } else {
+      console.warn("SpacetimeDB client not connected or reducers not available, cannot reset simulation.");
+    }
+  };
+
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
       {/* Group buttons together */}
@@ -191,6 +206,10 @@ function App() {
         {/* New button for explosion */}
         <button onClick={spawnExplosion}>
           Spawn Explosion
+        </button>
+        {/* New button for reset */}
+        <button onClick={resetSimulation} style={{ backgroundColor: '#ffaaaa' }}>
+          Reset
         </button>
       </div>
       <Canvas camera={{ position: [0, 15, 30], fov: 75 }}>
